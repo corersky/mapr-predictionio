@@ -14,8 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+resolvers ++= Seq(
+      "repo" at "http://repository.mapr.com/maven"
+)
 
 name := "data"
+val hbaseVersion = "1.1.1-mapr-1602" 
 
 libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time"    % "2.6.0",
