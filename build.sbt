@@ -38,7 +38,15 @@ elasticsearchVersion in ThisBuild := "1.4.4"
 
 json4sVersion in ThisBuild := "3.2.10"
 
+hadoopVersion in ThisBuild := "2.7.0-mapr-1602"
+
 sparkVersion in ThisBuild := "1.6.1"
+
+hbaseVersion in ThisBuild := "1.1.1-mapr-1602"
+
+resolvers in ThisBuild ++= Seq(
+      "repo" at "http://repository.mapr.com/maven"
+)
 
 lazy val pioBuildInfoSettings = buildInfoSettings ++ Seq(
   sourceGenerators in Compile <+= buildInfo,
@@ -47,7 +55,9 @@ lazy val pioBuildInfoSettings = buildInfoSettings ++ Seq(
     version,
     scalaVersion,
     sbtVersion,
-    sparkVersion),
+    sparkVersion,
+    hadoopVersion,
+    hbaseVersion),
   buildInfoPackage := "org.apache.predictionio.core")
 
 lazy val conf = file(".") / "conf"

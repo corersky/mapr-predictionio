@@ -28,4 +28,10 @@ object PIOBuild extends Build {
   val sparkVersion = SettingKey[String](
     "spark-version",
     "The version of Apache Spark used for building.")
+  val hadoopVersion = SettingKey[String](
+    "hadoop-version",
+    "The version of Apache hadoop used for building.")
+  val hbaseVersion = SettingKey[String](
+    "hbase-version",
+    "The version of MapRDB used for building.")
 }

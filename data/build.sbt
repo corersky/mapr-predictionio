@@ -14,12 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-resolvers ++= Seq(
-      "repo" at "http://repository.mapr.com/maven"
-)
 
 name := "data"
-val hbaseVersion = "1.1.1-mapr-1602" 
 
 libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time"    % "2.6.0",
@@ -28,20 +24,20 @@ libraryDependencies ++= Seq(
   "io.spray"               %% "spray-routing"  % "1.3.3",
   "io.spray"               %% "spray-testkit"  % "1.3.3" % "test",
   "mysql"                   % "mysql-connector-java" % "5.1.37",
-  "org.apache.hadoop"       % "hadoop-common"  % "2.6.2"
+  "org.apache.hadoop"       % "hadoop-common"  % hadoopVersion.value
     exclude("javax.servlet", "servlet-api"),
-  "org.apache.hbase"        % "hbase-common"   % "0.98.5-hadoop2",
-  "org.apache.hbase"        % "hbase-client"   % "0.98.5-hadoop2"
+  "org.apache.hbase"        % "hbase-common"   % hbaseVersion.value,
+  "org.apache.hbase"        % "hbase-client"   % hbaseVersion.value
     exclude("org.apache.zookeeper", "zookeeper"),
   // added for Parallel storage interface
-  "org.apache.hbase"        % "hbase-server"   % "0.98.5-hadoop2"
+  "org.apache.hbase"        % "hbase-server"   % hbaseVersion.value
     exclude("org.apache.hbase", "hbase-client")
     exclude("org.apache.zookeeper", "zookeeper")
     exclude("javax.servlet", "servlet-api")
     exclude("org.mortbay.jetty", "servlet-api-2.5")
     exclude("org.mortbay.jetty", "jsp-api-2.1")
     exclude("org.mortbay.jetty", "jsp-2.1"),
-  "org.apache.zookeeper"    % "zookeeper"      % "3.4.7"
+  "org.apache.zookeeper"    % "zookeeper"      % "3.4.5-mapr-1503"
     exclude("org.slf4j", "slf4j-api")
     exclude("org.slf4j", "slf4j-log4j12"),
   "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
