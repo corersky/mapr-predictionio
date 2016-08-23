@@ -24,20 +24,20 @@ libraryDependencies ++= Seq(
   "io.spray"               %% "spray-routing"  % "1.3.3",
   "io.spray"               %% "spray-testkit"  % "1.3.3" % "test",
   "mysql"                   % "mysql-connector-java" % "5.1.37",
-  "org.apache.hadoop"       % "hadoop-common"  % hadoopVersion.value
+  "org.apache.hadoop"       % "hadoop-common"  % hadoopVersion.value % "provided"
     exclude("javax.servlet", "servlet-api"),
-  "org.apache.hbase"        % "hbase-common"   % hbaseVersion.value,
-  "org.apache.hbase"        % "hbase-client"   % hbaseVersion.value
+  "org.apache.hbase"        % "hbase-common"   % hbaseVersion.value % "provided",
+  "org.apache.hbase"        % "hbase-client"   % hbaseVersion.value % "provided"
     exclude("org.apache.zookeeper", "zookeeper"),
   // added for Parallel storage interface
-  "org.apache.hbase"        % "hbase-server"   % hbaseVersion.value
+  "org.apache.hbase"        % "hbase-server"   % hbaseVersion.value % "provided"
     exclude("org.apache.hbase", "hbase-client")
     exclude("org.apache.zookeeper", "zookeeper")
     exclude("javax.servlet", "servlet-api")
     exclude("org.mortbay.jetty", "servlet-api-2.5")
     exclude("org.mortbay.jetty", "jsp-api-2.1")
     exclude("org.mortbay.jetty", "jsp-2.1"),
-  "org.apache.zookeeper"    % "zookeeper"      % "3.4.5-mapr-1503"
+  "org.apache.zookeeper"    % "zookeeper"      % "3.4.5-mapr-1503" % "provided"
     exclude("org.slf4j", "slf4j-api")
     exclude("org.slf4j", "slf4j-log4j12"),
   "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
