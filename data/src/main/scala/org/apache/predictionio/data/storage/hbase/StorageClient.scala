@@ -44,7 +44,7 @@ class StorageClient(val config: StorageClientConfig)
   extends BaseStorageClient with Logging {
 
   val conf = HBaseConfiguration.create()
-
+/*
   if (config.test) {
     // use fewer retries and shorter timeout for test mode
     conf.set("hbase.client.retries.number", "1")
@@ -75,9 +75,9 @@ class StorageClient(val config: StorageClientConfig)
       throw e
     }
   }
-
+*/
 //  val connection = HConnectionManager.createConnection(conf)
-    val connection = ConnectionFactory.createConnection(conf)
+  val connection = ConnectionFactory.createConnection(conf)
 
   val client = HBClient(
     conf = conf,
