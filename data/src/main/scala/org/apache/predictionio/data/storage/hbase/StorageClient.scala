@@ -23,14 +23,14 @@ import org.apache.predictionio.data.storage.StorageClientConfig
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.MasterNotRunningException
-import org.apache.hadoop.hbase.ZooKeeperConnectionException
+//import org.apache.hadoop.hbase.MasterNotRunningException
+//import org.apache.hadoop.hbase.ZooKeeperConnectionException
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Admin
 //import org.apache.hadoop.hbase.client.HConnectionManager
 //import org.apache.hadoop.hbase.client.HConnection
-import org.apache.hadoop.hbase.client.HBaseAdmin
+//import org.apache.hadoop.hbase.client.HBaseAdmin
 
 import grizzled.slf4j.Logging
 
