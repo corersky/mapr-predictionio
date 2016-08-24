@@ -25,7 +25,8 @@ import org.apache.predictionio.data.storage.EventValidation
 import org.apache.predictionio.data.storage.DataMap
 
 import org.apache.hadoop.hbase.client.Scan
-import org.apache.hadoop.hbase.client.HConnection
+//import org.apache.hadoop.hbase.client.HConnection
+import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.util.Bytes
@@ -48,7 +49,7 @@ object HB_0_8_0 {
   implicit val formats = DefaultFormats
 
   def getByAppId(
-    connection: HConnection,
+    connection: Connection,
     namespace: String,
     appId: Int): Iterator[Event] = {
     val tableName = TableName.valueOf(namespace, "events")

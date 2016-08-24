@@ -164,11 +164,11 @@ object HBEventsUtil {
     val put = new Put(rowKey.toBytes, event.eventTime.getMillis)
 
     def addStringToE(col: Array[Byte], v: String): Put = {
-      put.add(eBytes, col, Bytes.toBytes(v))
+      put.addColumn(eBytes, col, Bytes.toBytes(v))
     }
 
     def addLongToE(col: Array[Byte], v: Long): Put = {
-      put.add(eBytes, col, Bytes.toBytes(v))
+      put.addColumn(eBytes, col, Bytes.toBytes(v))
     }
 
     addStringToE(colNames("event"), event.event)

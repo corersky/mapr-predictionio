@@ -21,8 +21,10 @@ package org.apache.predictionio.data.storage.hbase
 import org.apache.predictionio.data.storage.Event
 import org.apache.predictionio.data.storage.PEvents
 import org.apache.predictionio.data.storage.StorageClientConfig
+import org.apache.hadoop.hbase.client.ConnectionFactory
+import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.{TableName, HBaseConfiguration}
-import org.apache.hadoop.hbase.client.{HTable, Delete, Result}
+import org.apache.hadoop.hbase.client.{Table, Delete, Result}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.PIOHBaseUtil
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
@@ -36,7 +38,8 @@ import org.joda.time.DateTime
 class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String) extends PEvents {
 
   def checkTableExists(appId: Int, channelId: Option[Int]): Unit = {
-    if (!client.admin.tableExists(HBEventsUtil.tableName(namespace, appId, channelId))) {
+    val tableName = TableName.valueOf(HBEventsUtil.tableName(namespace, appId, channelId))
+    if (!client.admin.tableExists(tableName)) {
       if (channelId.nonEmpty) {
         logger.error(s"The appId $appId with channelId $channelId does not exist." +
           s" Please use valid appId and channelId.")
@@ -123,14 +126,16 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
       val conf = HBaseConfiguration.create()
       conf.set(TableOutputFormat.OUTPUT_TABLE,
         tableName)
-
-      val table = new HTable(conf, tableName)
+      val connection = ConnectionFactory.createConnection(conf)
+      val table = connection.getTable(TableName.valueOf(tableName))
+//      val table = new Table(conf, tableName)
       iter.foreach { id =>
         val rowKey = HBEventsUtil.RowKey(id)
         val delete = new Delete(rowKey.b)
         table.delete(delete)
       }
-      table.close
+      table.close()
+      connection.close()
     }
   }
 }
