@@ -53,9 +53,9 @@ object HBEventsUtil {
 
   def tableName(namespace: String, appId: Int, channelId: Option[Int] = None): String = {
     channelId.map { ch =>
-      s"/maprdb_tables/hbase_tables/${namespace}/events_${appId}_${ch}"
+      s"/maprdb_tables/hbase_tables/${namespace}_events_${appId}_${ch}"
     }.getOrElse {
-      s"/maprdb_tables/hbase_tables/${namespace}/events_${appId}"
+      s"/maprdb_tables/hbase_tables/${namespace}_events_${appId}"
     }
   }
 
