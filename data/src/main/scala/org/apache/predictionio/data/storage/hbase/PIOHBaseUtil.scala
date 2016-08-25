@@ -16,16 +16,16 @@
  */
 
 
-package org.apache.hadoop.hbase.mapreduce
+//package org.apache.hadoop.hbase.mapreduce
 
 /* Pretends to be hbase.mapreduce package in order to expose its
  * Package-accessible only static function convertScanToString()
  */
 
-import org.apache.hadoop.hbase.client.Scan
+//import org.apache.hadoop.hbase.client.Scan
 
-object PIOHBaseUtil {
-  def convertScanToString(scan: Scan): String = {
-    TableMapReduceUtil.convertScanToString(scan)
-  }
-}
+//object PIOHBaseUtil {
+//  def convertScanToString(scan: Scan): String = {
+//    TableMapReduceUtil.convertScanToString(scan)
+//  }
+//}

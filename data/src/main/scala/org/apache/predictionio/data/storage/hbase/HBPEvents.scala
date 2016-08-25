@@ -21,15 +21,16 @@ package org.apache.predictionio.data.storage.hbase
 import org.apache.predictionio.data.storage.Event
 import org.apache.predictionio.data.storage.PEvents
 import org.apache.predictionio.data.storage.StorageClientConfig
-import org.apache.hadoop.hbase.client.ConnectionFactory
-import org.apache.hadoop.hbase.client.Connection
-import org.apache.hadoop.hbase.{TableName, HBaseConfiguration}
-import org.apache.hadoop.hbase.client.{Table, Delete, Result}
+import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.PIOHBaseUtil
+import org.apache.hadoop.hbase.mapreduce.{IdentityTableMapper, TableMapReduceUtil}
+import org.apache.hadoop.mapreduce.Job
+//import org.apache.hadoop.hbase.mapreduce.PIOHBaseUtil
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
 import org.apache.hadoop.io.Writable
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.OutputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -66,11 +67,11 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     )(sc: SparkContext): RDD[Event] = {
 
     checkTableExists(appId, channelId)
-
+/*
     val conf = HBaseConfiguration.create()
     conf.set(TableInputFormat.INPUT_TABLE,
       HBEventsUtil.tableName(namespace, appId, channelId))
-
+*/
     val scan = HBEventsUtil.createScan(
         startTime = startTime,
         untilTime = untilTime,
@@ -83,16 +84,32 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     scan.setCaching(500) // TODO
     scan.setCacheBlocks(false) // TODO
 
-    conf.set(TableInputFormat.SCAN, PIOHBaseUtil.convertScanToString(scan))
+//    conf.set(TableInputFormat.SCAN, PIOHBaseUtil.convertScanToString(scan))
 
     // HBase is not accessed until this rdd is actually used.
+/*
     val rdd = sc.newAPIHadoopRDD(conf, classOf[TableInputFormat],
+      classOf[ImmutableBytesWritable],
+      classOf[Result]).map {
+        case (key, row) => HBEventsUtil.resultToEvent(row, appId)
+      }
+*/
+    val table = HBEventsUtil.tableName(namespace, appId, channelId)
+    val rdd = sc.newAPIHadoopRDD(makeConf(table, scan), classOf[TableInputFormat],
       classOf[ImmutableBytesWritable],
       classOf[Result]).map {
         case (key, row) => HBEventsUtil.resultToEvent(row, appId)
       }
 
     rdd
+  }
+
+  private def makeConf(table: String, scan: Scan) = {
+    val conf = HBaseConfiguration.create()
+    conf.set(TableInputFormat.INPUT_TABLE, table)
+    val job = Job.getInstance(conf)
+    TableMapReduceUtil.initTableMapperJob(table, scan, classOf[IdentityTableMapper], null, null, job)
+    job.getConfiguration
   }
 
   override
