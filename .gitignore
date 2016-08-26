@@ -1,4 +1,4 @@
-#conf/pio-env.sh
+conf/pio-env.sh
 .DS_Store
 .pio_store
 *.swp
