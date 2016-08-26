@@ -13,6 +13,7 @@ examples/data/ml-*
 fs/
 supervisord.conf
 assembly/
+/lib
 /dist
 pio.log
 *.tar.gz
