@@ -27,12 +27,13 @@ import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.filter.FilterList
-import org.apache.hadoop.hbase.filter.RegexStringComparator
+//import org.apache.hadoop.hbase.filter.RegexStringComparator
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp
 import org.apache.hadoop.hbase.filter.BinaryComparator
 import org.apache.hadoop.hbase.filter.QualifierFilter
 import org.apache.hadoop.hbase.filter.SkipFilter
+import org.apache.hadoop.conf.Configuration
 
 import org.json4s.DefaultFormats
 import org.json4s.JObject
@@ -52,10 +53,13 @@ object HBEventsUtil {
   implicit val formats = DefaultFormats
 
   def tableName(namespace: String, appId: Int, channelId: Option[Int] = None): String = {
+    val hadoopConf = new Configuration()
+    val namespaceEnv = hadoopConf.getStrings("hbase.table.namespace.mappings").last
+    val namespacePath = namespaceEnv.substring(namespaceEnv.indexOf("/"))
     channelId.map { ch =>
-      s"/maprdb_tables/hbase_tables/${namespace}_events_${appId}_${ch}"
+      s"${namespacePath}/${namespace}_events_${appId}_${ch}"
     }.getOrElse {
-      s"/maprdb_tables/hbase_tables/${namespace}_events_${appId}"
+      s"${namespacePath}/${namespace}_events_${appId}"
     }
   }
 

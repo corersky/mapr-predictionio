@@ -44,6 +44,9 @@ class StorageClient(val config: StorageClientConfig)
   extends BaseStorageClient with Logging {
 
   val conf = HBaseConfiguration.create()
+
+  // for MapRDB, those tests won't apply
+
 /*
   if (config.test) {
     // use fewer retries and shorter timeout for test mode

@@ -26,7 +26,6 @@ import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{IdentityTableMapper, TableMapReduceUtil}
 import org.apache.hadoop.mapreduce.Job
-//import org.apache.hadoop.hbase.mapreduce.PIOHBaseUtil
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
 import org.apache.hadoop.io.Writable
