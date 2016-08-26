@@ -85,11 +85,11 @@ else
 fi
 
 MAPR_HADOOP_CLASSPATH=`hadoop classpath`
-MAPR_SPARK_CLASSPATH="`mapr classpath`:$MAPR_HADOOP_CLASSPATH"
+MAPR_SPARK_CLASSPATH=`mapr classpath`
 source /opt/mapr/spark/spark-1.6.1/mapr-util/generate-classpath.sh
 generate_compatible_classpath "spark" "1.6.1" "hbase"
 MAPR_HBASE_CLASSPATH=${generated_classpath}
-CLASSPATH="$CLASSPATH:$MAPR_SPARK_CLASSPATH:$MAPR_HBASE_CLASSPATH"
+CLASSPATH="$CLASSPATH:$MAPR_HADOOP_CLASSPATH:$MAPR_SPARK_CLASSPATH:$MAPR_HBASE_CLASSPATH"
 
 export CLASSPATH
 
