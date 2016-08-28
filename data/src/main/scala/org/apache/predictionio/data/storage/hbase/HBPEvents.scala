@@ -24,7 +24,8 @@ import org.apache.predictionio.data.storage.StorageClientConfig
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.{IdentityTableMapper, TableMapReduceUtil}
+import org.apache.hadoop.hbase.mapreduce.IdentityTableMapper
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
@@ -107,7 +108,7 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     val conf = HBaseConfiguration.create()
     conf.set(TableInputFormat.INPUT_TABLE, table)
     val job = Job.getInstance(conf)
-    TableMapReduceUtil.initTableMapperJob(table, scan, classOf[IdentityTableMapper], null, null, job)
+    initTableMapperJob(table, scan, classOf[IdentityTableMapper], null, null, job)
     job.getConfiguration
   }
 
