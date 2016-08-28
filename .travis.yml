@@ -27,6 +27,7 @@ branches:
   only:
     - master
     - develop
+    - mapr
     - testing-infrastructure
 
 language: scala
