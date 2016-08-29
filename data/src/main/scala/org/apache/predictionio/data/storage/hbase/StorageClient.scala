@@ -23,14 +23,9 @@ import org.apache.predictionio.data.storage.StorageClientConfig
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.HBaseConfiguration
-//import org.apache.hadoop.hbase.MasterNotRunningException
-//import org.apache.hadoop.hbase.ZooKeeperConnectionException
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Admin
-//import org.apache.hadoop.hbase.client.HConnectionManager
-//import org.apache.hadoop.hbase.client.HConnection
-//import org.apache.hadoop.hbase.client.HBaseAdmin
 
 import grizzled.slf4j.Logging
 
@@ -44,48 +39,11 @@ class StorageClient(val config: StorageClientConfig)
   extends BaseStorageClient with Logging {
 
   val conf = HBaseConfiguration.create()
-
-  // for MapRDB, those tests won't apply
-
-/*
-  if (config.test) {
-    // use fewer retries and shorter timeout for test mode
-    conf.set("hbase.client.retries.number", "1")
-    conf.set("zookeeper.session.timeout", "30000");
-    conf.set("zookeeper.recovery.retry", "1")
-  }
-
-  try {
-    HBaseAdmin.checkHBaseAvailable(conf)
-  } catch {
-    case e: MasterNotRunningException =>
-      error("HBase master is not running (ZooKeeper ensemble: " +
-        conf.get("hbase.zookeeper.quorum") + "). Please make sure that HBase " +
-        "is running properly, and that the configuration is pointing at the " +
-        "correct ZooKeeper ensemble.")
-      throw e
-    case e: ZooKeeperConnectionException =>
-      error("Cannot connect to ZooKeeper (ZooKeeper ensemble: " +
-        conf.get("hbase.zookeeper.quorum") + "). Please make sure that the " +
-        "configuration is pointing at the correct ZooKeeper ensemble. By " +
-        "default, HBase manages its own ZooKeeper, so if you have not " +
-        "configured HBase to use an external ZooKeeper, that means your " +
-        "HBase is not started or configured properly.")
-      throw e
-    case e: Exception => {
-      error("Failed to connect to HBase." +
-        " Please check if HBase is running properly.")
-      throw e
-    }
-  }
-*/
-//  val connection = HConnectionManager.createConnection(conf)
   val connection = ConnectionFactory.createConnection(conf)
 
   val client = HBClient(
     conf = conf,
     connection = connection,
-//    admin = new HBaseAdmin(connection)
     admin = connection.getAdmin()
   )
 

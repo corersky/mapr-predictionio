@@ -25,7 +25,6 @@ import org.apache.predictionio.data.storage.StorageClientConfig
 import org.apache.predictionio.data.storage.hbase.HBEventsUtil.RowKey
 import org.apache.hadoop.hbase.HColumnDescriptor
 import org.apache.hadoop.hbase.HTableDescriptor
-//import org.apache.hadoop.hbase.NamespaceDescriptor
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client._
 import org.joda.time.DateTime
@@ -42,21 +41,13 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
   def resultToEvent(result: Result, appId: Int): Event =
     HBEventsUtil.resultToEvent(result, appId)
 
-  def getTable(appId: Int, channelId: Option[Int] = None): Table =
-    client.connection.getTable(TableName.valueOf(HBEventsUtil.tableName(namespace, appId, channelId)))
+  def getTable(appId: Int, channelId: Option[Int] = None): Table = {
+    val table = HBEventsUtil.tableName(namespace, appId, channelId)
+    client.connection.getTable(TableName.valueOf(table))
+  }
 
   override
   def init(appId: Int, channelId: Option[Int] = None): Boolean = {
-    // check namespace exist
-    /*
-    val existingNamespace = client.admin.listNamespaceDescriptors()
-      .map(_.getName)
-    if (!existingNamespace.contains(namespace)) {
-      val nameDesc = NamespaceDescriptor.create(namespace).build()
-      info(s"The namespace ${namespace} doesn't exist yet. Creating now...")
-      client.admin.createNamespace(nameDesc)
-    }
-    */
     val tableName = TableName.valueOf(HBEventsUtil.tableName(namespace, appId, channelId))
     if (!client.admin.tableExists(tableName)) {
       info(s"The table ${tableName.getNameAsString()} doesn't exist yet." +
@@ -104,7 +95,6 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
       val table = getTable(appId, channelId)
       val (put, rowKey) = HBEventsUtil.eventToPut(event, appId)
       table.put(put)
-//      table.flushCommits()
       table.close()
       rowKey.toString
     }

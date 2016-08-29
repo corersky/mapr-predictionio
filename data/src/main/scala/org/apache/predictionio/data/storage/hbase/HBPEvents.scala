@@ -67,11 +67,6 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     )(sc: SparkContext): RDD[Event] = {
 
     checkTableExists(appId, channelId)
-/*
-    val conf = HBaseConfiguration.create()
-    conf.set(TableInputFormat.INPUT_TABLE,
-      HBEventsUtil.tableName(namespace, appId, channelId))
-*/
     val scan = HBEventsUtil.createScan(
         startTime = startTime,
         untilTime = untilTime,
@@ -84,16 +79,6 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     scan.setCaching(500) // TODO
     scan.setCacheBlocks(false) // TODO
 
-//    conf.set(TableInputFormat.SCAN, PIOHBaseUtil.convertScanToString(scan))
-
-    // HBase is not accessed until this rdd is actually used.
-/*
-    val rdd = sc.newAPIHadoopRDD(conf, classOf[TableInputFormat],
-      classOf[ImmutableBytesWritable],
-      classOf[Result]).map {
-        case (key, row) => HBEventsUtil.resultToEvent(row, appId)
-      }
-*/
     val table = HBEventsUtil.tableName(namespace, appId, channelId)
     val rdd = sc.newAPIHadoopRDD(makeConf(table, scan), classOf[TableInputFormat],
       classOf[ImmutableBytesWritable],
@@ -145,7 +130,6 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
         tableName)
       val connection = ConnectionFactory.createConnection(conf)
       val table = connection.getTable(TableName.valueOf(tableName))
-//      val table = new Table(conf, tableName)
       iter.foreach { id =>
         val rowKey = HBEventsUtil.RowKey(id)
         val delete = new Delete(rowKey.b)

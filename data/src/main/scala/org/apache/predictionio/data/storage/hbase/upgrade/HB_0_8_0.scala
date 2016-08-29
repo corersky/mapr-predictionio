@@ -25,7 +25,6 @@ import org.apache.predictionio.data.storage.EventValidation
 import org.apache.predictionio.data.storage.DataMap
 
 import org.apache.hadoop.hbase.client.Scan
-//import org.apache.hadoop.hbase.client.HConnection
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.TableName

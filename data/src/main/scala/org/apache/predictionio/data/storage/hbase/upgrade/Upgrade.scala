@@ -66,8 +66,6 @@ object Upgrade {
         }
         newTable.put(puts.toList)
       }
-
-//    newTable.flushCommits()
     newTable.close()
     println("Done.")
   }
