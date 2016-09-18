@@ -53,4 +53,6 @@ libraryDependencies ++= Seq(
   "org.spark-project.akka" %% "akka-actor"     % "2.3.4-spark",
   "org.specs2"             %% "specs2"         % "2.3.13" % "test")
 
+dependencyOverrides += "org.slf4j" %  "slf4j-log4j12" % "1.7.18"
+
 parallelExecution in Test := false
