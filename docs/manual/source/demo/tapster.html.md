@@ -2,11 +2,28 @@
 title: Comics Recommendation Demo
 ---
 
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 ## Introduction
 
 In this demo, we will show you how to build a Tinder-style web application (named "Tapster") recommending comics to users based on their likes/dislikes of episodes interactively.
 
-The demo will use [Similar Product Template](https://docs.prediction.io/templates/similarproduct/quickstart/). Similar Product Template is a great choice if you want to make recommendations based on immediate user activities or for new users with limited history. It uses MLLib Alternating Least Squares (ALS) recommendation algorithm, a [Collaborative filtering](http://en.wikipedia.org/wiki/Recommender_system#Collaborative_filtering) (CF) algorithm commonly used for recommender systems. These techniques aim to fill in the missing entries of a user-item association matrix. Users and products are described by a small set of latent factors that can be used to predict missing entries. A layman's interpretation of Collaborative Filtering is "People who like this comic, also like these comics."
+The demo will use [Similar Product Template](https://predictionio.incubator.apache.org/templates/similarproduct/quickstart/). Similar Product Template is a great choice if you want to make recommendations based on immediate user activities or for new users with limited history. It uses MLLib Alternating Least Squares (ALS) recommendation algorithm, a [Collaborative filtering](http://en.wikipedia.org/wiki/Recommender_system#Collaborative_filtering) (CF) algorithm commonly used for recommender systems. These techniques aim to fill in the missing entries of a user-item association matrix. Users and products are described by a small set of latent factors that can be used to predict missing entries. A layman's interpretation of Collaborative Filtering is "People who like this comic, also like these comics."
 
 All the code and data is on GitHub at: [github.com/PredictionIO/Demo-Tapster](https://github.com/PredictionIO/Demo-Tapster).
 
@@ -28,6 +45,7 @@ The data structure looks like this:
 192,587 rows. Each row represents one user like for the given episode.
 
 The tutorial has four major steps:
+
 - Demo application setup
 - PredictionIO installation and setup
 - Import data into database and PredictionIO
@@ -96,7 +114,7 @@ We are going to copy the Similar Product Template into the PIO directory.
 
 ```
 $ cd PredictionIO
-$ pio template get PredictionIO/template-scala-parallel-similarproduct tapster-episode-similar
+$ git clone https://github.com/apache/incubator-predictionio-template-similar-product.git tapster-episode-similar
 ```
 
 Next we are going to update the App ID in the ‘engine.json’ file to match the App ID we just created.
@@ -333,7 +351,7 @@ queryPIO: function() {
 ```
 ### Rails
 
-On the Rails side all the fun things happen in the episodes controller locates at: `app/controllers/episodes_controller` [View on GitHub](https://github.com/PredictionIO/Demo-Tapster/blob/master/app/controllers/episodes_controller.rb).
+On the Rails side all the fun things happen in the episodes controller located at: `app/controllers/episodes_controller` [View on GitHub](https://github.com/PredictionIO/Demo-Tapster/blob/master/app/controllers/episodes_controller.rb).
 
 ```
 def query
@@ -388,7 +406,7 @@ looking it up in the database and rendering that object as JSON.
 
 Once the response is sent to the browser JavaScript is used to replace the existing comic and hide the loading message.
 
-Thats it. You’re done! If Ruby is not your language of choice check out our other [SDKs](http://docs.prediction.io/sdk/) and remember you can always interact with the Event Server though it’s native JSON API.
+Thats it. You’re done! If Ruby is not your language of choice check out our other [SDKs](http://predictionio.incubator.apache.org/sdk/) and remember you can always interact with the Event Server though it’s native JSON API.
 
 ## Links
 Source code is on GitHub at: [github.com/PredictionIO/Demo-Tapster](https://github.com/PredictionIO/Demo-Tapster)

@@ -1,6 +1,23 @@
 ---
-title:  Contribute Code
+title: Contribute Code
 ---
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 
 Thank you for your interest in contributing to Apache PredictionIO (incubating).
 Our mission is to enable developers to build scalable machine learning
@@ -35,6 +52,8 @@ bug fixes will follow a different path.
 
 ## How to Add / Propose a New Feature
 
+Before adding new features into JIRA, please check that the feature does not currently exist in JIRA.
+
 1. To propose a new feature, simply
    [subscribe](mailto:dev-subscribe@predictionio.incubator.apache.org) and post
    your proposal to [Apache PredictionIO (incubating) Development Mailing List]
@@ -47,6 +66,26 @@ bug fixes will follow a different path.
    (incubating) Development Mailing List as primary mode of communication. You
    never know if someone else has a better idea. ;)
 
+### Adding ticket to JIRA
+
+1. Add a descriptive Summary and a detailed description
+2. Set Issue Type to Bug, Improvement, New Feature, Test or Wish
+3. Set Priority to Blocker, Critical, Major, Minor or Trivial
+4. Fill out Affects Version with the version of PredictionIO you are currently using
+5. Fill out Environment if needed for description of your bug / feature
+6. Please leave other fields blank
+
+### Triaging JIRA
+
+Tickets will be triaged by PredictionIO committers.
+
+- **Target Version**: Either a particular version or `Future` if to be done later
+    + Once a fix has been committed, the Fix Version will filled in with the appropriate release
+
+- **Component**: Each ticket will be annotated with one or more of the following Components
+    + **Core**: affects the main code branch / will be part of a release
+    + **Documentation**: affects the documents / will be pushed to livedoc branch
+    + **Templates**: affects one of the separate github repositories for a template
 
 ## How to Issue a Pull Request
 
@@ -107,7 +146,7 @@ After the previous section, you should have a copy of Apache PredictionIO
 
 Apache PredictionIO (incubating) relies on 3rd party software to perform its
 tasks. To set them up, simply follow this [documentation](
-http://docs.prediction.io/install/install-sourcecode/#installing-dependencies).
+http://predictionio.incubator.apache.org/install/install-sourcecode/#installing-dependencies).
 
 ### Start Hacking
 
@@ -142,10 +181,6 @@ layer for event store and metadata store.
 Source code for http://predictionio.incubator.apache.org site, and any other
 documentation support files.
 
-### engines
-
-Obsolete built-in engines. To be removed.
-
 ### examples
 
 Complete code examples showing Apache PredictionIO (incubating)'s application.
@@ -154,9 +189,9 @@ Complete code examples showing Apache PredictionIO (incubating)'s application.
 
 Embedded SBT (Simple Build Tool) launcher.
 
-### templates
+### storage
 
-Starting point of building your custom engine.
+Storage implementations.
 
 ### tools
 

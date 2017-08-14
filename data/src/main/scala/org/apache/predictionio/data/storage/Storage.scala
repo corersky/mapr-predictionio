@@ -65,7 +65,7 @@ trait BaseStorageClient {
   *                   variables,
   *                   - PIO_STORAGE_SOURCES_PGSQL_TYPE=jdbc
   *                   - PIO_STORAGE_SOURCES_PGSQL_USERNAME=abc
-  *                   - PIO_STOARGE_SOURCES_PGSQL_PASSWORD=xyz
+  *                   - PIO_STORAGE_SOURCES_PGSQL_PASSWORD=xyz
   *
   *                   this field will be filled as a map of string to string:
   *                   - TYPE -> jdbc
@@ -91,7 +91,10 @@ case class StorageClientConfig(
 class StorageClientException(message: String, cause: Throwable)
   extends RuntimeException(message, cause)
 
-@deprecated("Use StorageException", "0.9.2")
+/** DEPRECATED. Use [[StorageException]].
+  *
+  * @deprecated Use [[StorageException]]
+  */
 private[predictionio] case class StorageError(message: String)
 
 /** :: DeveloperApi ::
@@ -109,6 +112,33 @@ class StorageException(message: String, cause: Throwable)
   def this(message: String) = this(message, null)
 }
 
+class EnvironmentService{
+
+  def envKeys(): Iterable[String] = {
+    sys.env.keys
+  }
+
+  def getByKey(key: String): String = {
+    sys.env(key)
+  }
+
+  def filter(filterExpression: ((String, String)) => Boolean): Map[String, String] = {
+    sys.env.filter(filterExpression)
+  }
+}
+
+object EnvironmentFactory{
+
+  var environmentService: Option[EnvironmentService] = None
+
+  def create(): EnvironmentService = {
+    if(environmentService.isEmpty){
+      environmentService = new Some[EnvironmentService](new EnvironmentService)
+    }
+    environmentService.get
+  }
+}
+
 /** Backend-agnostic data storage layer with lazy initialization. Use this
   * object when you need to interface with Event Store in your engine.
   *
@@ -120,6 +150,8 @@ object Storage extends Logging {
     client: BaseStorageClient,
     config: StorageClientConfig)
 
+  var environmentService: EnvironmentService = EnvironmentFactory.create
+
   private case class DataObjectMeta(sourceName: String, namespace: String)
 
   private var errors = 0
@@ -128,7 +160,7 @@ object Storage extends Logging {
 
   private val sourceTypesRegex = """PIO_STORAGE_SOURCES_([^_]+)_TYPE""".r
 
-  private val sourceKeys: Seq[String] = sys.env.keys.toSeq.flatMap { k =>
+  private val sourceKeys: Seq[String] = environmentService.envKeys.toSeq.flatMap { k =>
     sourceTypesRegex findFirstIn k match {
       case Some(sourceTypesRegex(sourceType)) => Seq(sourceType)
       case None => Nil
@@ -149,7 +181,7 @@ object Storage extends Logging {
   private val repositoryNamesRegex =
     """PIO_STORAGE_REPOSITORIES_([^_]+)_NAME""".r
 
-  private val repositoryKeys: Seq[String] = sys.env.keys.toSeq.flatMap { k =>
+  private val repositoryKeys: Seq[String] = environmentService.envKeys.toSeq.flatMap { k =>
     repositoryNamesRegex findFirstIn k match {
       case Some(repositoryNamesRegex(repositoryName)) => Seq(repositoryName)
       case None => Nil
@@ -172,8 +204,8 @@ object Storage extends Logging {
     repositoryKeys.map(r =>
       try {
         val keyedPath = repositoriesPrefixPath(r)
-        val name = sys.env(prefixPath(keyedPath, "NAME"))
-        val sourceName = sys.env(prefixPath(keyedPath, "SOURCE"))
+        val name = environmentService.getByKey(prefixPath(keyedPath, "NAME"))
+        val sourceName = environmentService.getByKey(prefixPath(keyedPath, "SOURCE"))
         if (sourceKeys.contains(sourceName)) {
           r -> DataObjectMeta(
             sourceName = sourceName,
@@ -241,8 +273,8 @@ object Storage extends Logging {
   Option[ClientMeta] = {
     try {
       val keyedPath = sourcesPrefixPath(k)
-      val sourceType = sys.env(prefixPath(keyedPath, "TYPE"))
-      val props = sys.env.filter(t => t._1.startsWith(keyedPath)).map(
+      val sourceType = environmentService.getByKey(prefixPath(keyedPath, "TYPE"))
+      val props = environmentService.filter(t => t._1.startsWith(keyedPath)).map(
         t => t._1.replace(s"${keyedPath}_", "") -> t._2)
       val clientConfig = StorageClientConfig(
         properties = props,
@@ -338,7 +370,6 @@ object Storage extends Logging {
   private[predictionio] def verifyAllDataObjects(): Unit = {
     info("Verifying Meta Data Backend (Source: " +
       s"${repositoriesToDataObjectMeta(MetaDataRepository).sourceName})...")
-    getMetaDataEngineManifests()
     getMetaDataEngineInstances()
     getMetaDataEvaluationInstances()
     getMetaDataApps()
@@ -360,25 +391,52 @@ object Storage extends Logging {
     eventsDb.close()
   }
 
-  private[predictionio] def getMetaDataEngineManifests(): EngineManifests =
-    getDataObjectFromRepo[EngineManifests](MetaDataRepository)
-
-  private[predictionio] def getMetaDataEngineInstances(): EngineInstances =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[EngineInstances]]
+    *
+    * @return An implementation of [[EngineInstances]], depending on the runtime configuration
+    */
+  def getMetaDataEngineInstances(): EngineInstances =
     getDataObjectFromRepo[EngineInstances](MetaDataRepository)
 
-  private[predictionio] def getMetaDataEvaluationInstances(): EvaluationInstances =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[EvaluationInstances]]
+    *
+    * @return An implementation of [[EvaluationInstances]], depending on the runtime configuration
+    */
+  def getMetaDataEvaluationInstances(): EvaluationInstances =
     getDataObjectFromRepo[EvaluationInstances](MetaDataRepository)
 
-  private[predictionio] def getMetaDataApps(): Apps =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[Apps]]
+    *
+    * @return An implementation of [[Apps]], depending on the runtime configuration
+    */
+  def getMetaDataApps(): Apps =
     getDataObjectFromRepo[Apps](MetaDataRepository)
 
-  private[predictionio] def getMetaDataAccessKeys(): AccessKeys =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[AccessKeys]]
+    *
+    * @return An implementation of [[AccessKeys]], depending on the runtime configuration
+    */
+  def getMetaDataAccessKeys(): AccessKeys =
     getDataObjectFromRepo[AccessKeys](MetaDataRepository)
 
-  private[predictionio] def getMetaDataChannels(): Channels =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[Channels]]
+    *
+    * @return An implementation of [[Channels]], depending on the runtime configuration
+    */
+  def getMetaDataChannels(): Channels =
     getDataObjectFromRepo[Channels](MetaDataRepository)
 
-  private[predictionio] def getModelDataModels(): Models =
+  /** :: DeveloperApi ::
+    * Get a data access object for [[Models]]
+    *
+    * @return An implementation of [[Models]], depending on the runtime configuration
+    */
+  def getModelDataModels(): Models =
     getDataObjectFromRepo[Models](ModelDataRepository)
 
   /** Obtains a data access object that returns [[Event]] related local data

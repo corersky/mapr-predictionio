@@ -2,6 +2,23 @@
 title:  Contribute a SDK
 ---
 
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 A SDK should provide convenient methods for client applications to easily
 record users' behaviors in Apache PredictionIO (incubating)'s Event Server and
 also query recommendations from the ML Engines. Therefore, a SDK typically has 2
@@ -9,7 +26,7 @@ corresponding clients: `Event Client` and `Engine Client`.
 
 The following guideline bases on the REST API provided by Apache PredictionIO
 (incubating)'s  Event Client which details can be found
-[here](http://docs.prediction.io/datacollection/eventapi/).
+[here](http://predictionio.incubator.apache.org/datacollection/eventapi/).
 
 ## Event Client
 Because the Event Server has only 1 connection point, the `Event Client`
@@ -20,7 +37,7 @@ following rules.
 (e.g. http://localhost:7070/events.json?accessKey=1234567890)
 
 - **Request**: `POST` + JSON data. Please refer to the [Event Creation API]
-(http://docs.prediction.io/datacollection/eventapi/) for the details
+(http://predictionio.incubator.apache.org/datacollection/eventapi/) for the details
 on the fields of the JSON data object.
 
 - **Response**:
@@ -117,7 +134,7 @@ support the following 7 shorthand operations:
         ```
 
 Again, please refer to the [API documentation]
-(http://docs.prediction.io/datacollection/eventapi/) for explanations
+(http://predictionio.incubator.apache.org/datacollection/eventapi/) for explanations
 on the reversed events like `$set`, `$unset` or `$delete`.
 
 INFO: The `eventTime` is optional but it is recommended that the client

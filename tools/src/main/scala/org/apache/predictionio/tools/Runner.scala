@@ -15,22 +15,26 @@
  * limitations under the License.
  */
 
-
 package org.apache.predictionio.tools
 
 import java.io.File
 import java.net.URI
 
-import grizzled.slf4j.Logging
-import org.apache.predictionio.tools.console.ConsoleArgs
-import org.apache.predictionio.workflow.WorkflowUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.predictionio.tools.ReturnTypes._
+import org.apache.predictionio.workflow.WorkflowUtils
 
+import scala.collection.mutable
 import scala.sys.process._
 
-object Runner extends Logging {
+case class SparkArgs(
+  sparkHome: Option[String] = None,
+  sparkPassThrough: Seq[String] = Seq(),
+  sparkKryo: Boolean = false,
+  scratchUri: Option[URI] = None)
+
+object Runner extends EitherLogging {
   def envStringToMap(env: String): Map[String, String] =
     env.split(',').flatMap(p =>
       p.split('=') match {
@@ -70,7 +74,7 @@ object Runner extends Logging {
     (fs, uri) match {
       case (Some(f), Some(u)) =>
         f.close()
-      case _ => Unit
+      case _ => ()
     }
   }
 
@@ -92,29 +96,116 @@ object Runner extends Logging {
     }
   }
 
+  /** Group argument values by argument names
+    *
+    * This only works with long argument names immediately followed by a value
+    *
+    * Input:
+    * Seq("--foo", "bar", "--flag", "--dead", "beef baz", "n00b", "--foo", "jeez")
+    *
+    * Output:
+    * Map("--foo" -> Seq("bar", "jeez"), "--dead"- > "beef baz")
+    *
+    * @param arguments Sequence of argument names and values
+    * @return A map with argument values keyed by the same argument name
+    */
+  def groupByArgumentName(arguments: Seq[String]): Map[String, Seq[String]] = {
+    val argumentMap = mutable.HashMap.empty[String, Seq[String]]
+    arguments.foldLeft("") { (prev, current) =>
+      if (prev.startsWith("--") && !current.startsWith("--")) {
+        if (argumentMap.contains(prev)) {
+          argumentMap(prev) = argumentMap(prev) :+ current
+        } else {
+          argumentMap(prev) = Seq(current)
+        }
+      }
+      current
+    }
+    argumentMap.toMap
+  }
+
+  /** Remove argument names and values
+    *
+    * This only works with long argument names immediately followed by a value
+    *
+    * Input:
+    * Seq("--foo", "bar", "--flag", "--dead", "beef baz", "n00b", "--foo", "jeez")
+    * Set("--flag", "--foo")
+    *
+    * Output:
+    * Seq("--flag", "--dead", "beef baz", "n00b")
+    *
+    * @param arguments Sequence of argument names and values
+    * @param remove Name of argument and associated values to remove
+    * @return Sequence of argument names and values with targets removed
+    */
+  def removeArguments(arguments: Seq[String], remove: Set[String]): Seq[String] = {
+    if (remove.isEmpty) {
+      arguments
+    } else {
+      arguments.foldLeft(Seq.empty[String]) { (ongoing, current) =>
+        if (ongoing.isEmpty) {
+          Seq(current)
+        } else {
+          if (remove.contains(ongoing.last) && !current.startsWith("--")) {
+            ongoing.take(ongoing.length - 1)
+          } else {
+            ongoing :+ current
+          }
+        }
+      }
+    }
+  }
+
+  /** Combine repeated arguments together
+    *
+    * Input:
+    * Seq("--foo", "bar", "--flag", "--dead", "beef baz", "n00b", "--foo", "jeez")
+    * Map("--foo", (_ + _))
+    *
+    * Output:
+    * Seq("--flag", "--dead", "beef baz", "n00b", "--foo", "bar jeez")
+    *
+    * @param arguments Sequence of argument names and values
+    * @param combinators Map of argument name to combinator function
+    * @return Sequence of argument names and values with specific argument values combined
+    */
+  def combineArguments(
+      arguments: Seq[String],
+      combinators: Map[String, (String, String) => String]): Seq[String] = {
+    val argumentsToCombine: Map[String, Seq[String]] =
+      groupByArgumentName(arguments).filterKeys(combinators.keySet.contains(_))
+    val argumentsMinusToCombine = removeArguments(arguments, combinators.keySet)
+    val combinedArguments = argumentsToCombine flatMap { kv =>
+      Seq(kv._1, kv._2.reduce(combinators(kv._1)))
+    }
+    argumentsMinusToCombine ++ combinedArguments
+  }
+
   def runOnSpark(
       className: String,
       classArgs: Seq[String],
-      ca: ConsoleArgs,
-      extraJars: Seq[URI]): Int = {
+      sa: SparkArgs,
+      extraJars: Seq[URI],
+      pioHome: String,
+      verbose: Boolean = false): Expected[(Process, () => Unit)] = {
     // Return error for unsupported cases
     val deployMode =
-      argumentValue(ca.common.sparkPassThrough, "--deploy-mode").getOrElse("client")
+      argumentValue(sa.sparkPassThrough, "--deploy-mode").getOrElse("client")
     val master =
-      argumentValue(ca.common.sparkPassThrough, "--master").getOrElse("local")
+      argumentValue(sa.sparkPassThrough, "--master").getOrElse("local")
 
-    (ca.common.scratchUri, deployMode, master) match {
+    (sa.scratchUri, deployMode, master) match {
       case (Some(u), "client", m) if m != "yarn-cluster" =>
-        error("--scratch-uri cannot be set when deploy mode is client")
-        return 1
+        return logAndFail("--scratch-uri cannot be set when deploy mode is client")
       case (_, "cluster", m) if m.startsWith("spark://") =>
-        error("Using cluster deploy mode with Spark standalone cluster is not supported")
-        return 1
-      case _ => Unit
+        return logAndFail(
+          "Using cluster deploy mode with Spark standalone cluster is not supported")
+      case _ => ()
     }
 
     // Initialize HDFS API for scratch URI
-    val fs = ca.common.scratchUri map { uri =>
+    val fs = sa.scratchUri map { uri =>
       FileSystem.get(uri, new Configuration())
     }
 
@@ -124,18 +215,18 @@ object Runner extends Logging {
     ).mkString(",")
 
     // Location of Spark
-    val sparkHome = ca.common.sparkHome.getOrElse(
+    val sparkHome = sa.sparkHome.getOrElse(
       sys.env.getOrElse("SPARK_HOME", "."))
 
     // Local path to PredictionIO assembly JAR
-    val mainJar = handleScratchFile(
-      fs,
-      ca.common.scratchUri,
-      console.Console.coreAssembly(ca.common.pioHome.get))
+    val mainJar = Common.coreAssembly(pioHome) fold(
+        errStr => return Left(errStr),
+        assembly => handleScratchFile(fs, sa.scratchUri, assembly)
+      )
 
     // Extra JARs that are needed by the driver
     val driverClassPathPrefix =
-      argumentValue(ca.common.sparkPassThrough, "--driver-class-path") map { v =>
+      argumentValue(sa.sparkPassThrough, "--driver-class-path") map { v =>
         Seq(v)
       } getOrElse {
         Nil
@@ -146,18 +237,20 @@ object Runner extends Logging {
 
     // Extra files that are needed to be passed to --files
     val extraFiles = WorkflowUtils.thirdPartyConfFiles map { f =>
-      handleScratchFile(fs, ca.common.scratchUri, new File(f))
+      handleScratchFile(fs, sa.scratchUri, new File(f))
     }
 
     val deployedJars = extraJars map { j =>
-      handleScratchFile(fs, ca.common.scratchUri, new File(j))
+      handleScratchFile(fs, sa.scratchUri, new File(j))
     }
 
     val sparkSubmitCommand =
       Seq(Seq(sparkHome, "bin", "spark-submit").mkString(File.separator))
 
-    val sparkSubmitJars = if (extraJars.nonEmpty) {
-      Seq("--jars", deployedJars.map(_.toString).mkString(","))
+    val sparkSubmitJarsList = WorkflowUtils.thirdPartyJars ++ deployedJars ++
+      Common.jarFilesForSpark(pioHome).map(_.toURI)
+    val sparkSubmitJars = if (sparkSubmitJarsList.nonEmpty) {
+      Seq("--jars", sparkSubmitJarsList.map(_.toString).mkString(","))
     } else {
       Nil
     }
@@ -174,7 +267,7 @@ object Runner extends Logging {
       Nil
     }
 
-    val sparkSubmitKryo = if (ca.common.sparkKryo) {
+    val sparkSubmitKryo = if (sa.sparkKryo) {
       Seq(
         "--conf",
         "spark.serializer=org.apache.spark.serializer.KryoSerializer")
@@ -182,33 +275,34 @@ object Runner extends Logging {
       Nil
     }
 
-    val verbose = if (ca.common.verbose) Seq("--verbose") else Nil
+    val verboseArg = if (verbose) Seq("--verbose") else Nil
+    val pioLogDir = Option(System.getProperty("pio.log.dir")).getOrElse(s"$pioHome/log")
 
-    val sparkSubmit = Seq(
-      sparkSubmitCommand,
-      ca.common.sparkPassThrough,
+    val sparkSubmitArgs = Seq(
+      sa.sparkPassThrough,
       Seq("--class", className),
       sparkSubmitJars,
       sparkSubmitFiles,
       sparkSubmitExtraClasspaths,
       sparkSubmitKryo,
+      Seq("--driver-java-options", s"-Dpio.log.dir=$pioLogDir")).flatten
+
+    val whitespaceCombinator = (a: String, b: String) => s"$a $b"
+    val combinators = Map("--driver-java-options" -> whitespaceCombinator)
+
+    val sparkSubmit = Seq(
+      sparkSubmitCommand,
+      combineArguments(sparkSubmitArgs, combinators),
       Seq(mainJar),
-      detectFilePaths(fs, ca.common.scratchUri, classArgs),
+      detectFilePaths(fs, sa.scratchUri, classArgs),
       Seq("--env", pioEnvVars),
-      verbose).flatten.filter(_ != "")
+      verboseArg).flatten.filter(_ != "")
     info(s"Submission command: ${sparkSubmit.mkString(" ")}")
     val proc = Process(
       sparkSubmit,
       None,
       "CLASSPATH" -> "",
       "SPARK_YARN_USER_ENV" -> pioEnvVars).run()
-    Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-      def run(): Unit = {
-        cleanup(fs, ca.common.scratchUri)
-        proc.destroy()
-      }
-    }))
-    cleanup(fs, ca.common.scratchUri)
-    proc.exitValue()
+    Right((proc, () => cleanup(fs, sa.scratchUri)))
   }
 }

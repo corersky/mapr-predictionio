@@ -2,6 +2,23 @@
 title: Collecting Data through REST/SDKs
 ---
 
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 **Event Server** is designed to collect data into Apache PredictionIO
 (incubating) in an event-based style. Once the Event Server is launched, your
 application can send data to it through its **Event API** with HTTP requests or
@@ -10,14 +27,14 @@ with `EventClient`s of PredictionIO's SDKs.
 INFO: All Apache PredictionIO (incubating)-compliant engines support accessing
 the Event Store (i.e. the data store of Event Server) through [Apache
 PredictionIO (incubating)'s Storage
-API](http://docs.prediction.io/api/current/index.html#io.prediction.data.storage.package).
+API](http://predictionio.incubator.apache.org/api/current/index.html#org.apache.predictionio.data.storage.package).
 
 ## Launching the Event Server
 
 INFO: Before launching the Event Server, make sure that your event data store
 backend is properly configured and is running. By default, Apache PredictionIO
 (incubating) uses Apache HBase, and a quick configuration can be found
-[here](/install/install-linux.html#hbase). Please allow a minute (usually less
+[here](/install/install-sourcecode/#hbase). Please allow a minute (usually less
 than 30 seconds) after HBase is started for its initialization to complete
 before starting the Event Server.
 

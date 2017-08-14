@@ -34,6 +34,7 @@ import spray.httpx.Json4sSupport
 import spray.routing._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
 class AdminServiceActor(val commandClient: CommandClient)
   extends HttpServiceActor {
@@ -133,7 +134,7 @@ case class AdminServerConfig(
 )
 
 object AdminServer {
-  def createAdminServer(config: AdminServerConfig): Unit = {
+  def createAdminServer(config: AdminServerConfig): ActorSystem = {
     implicit val system = ActorSystem("AdminServerSystem")
 
     val commandClient = new CommandClient(
@@ -146,14 +147,15 @@ object AdminServer {
       Props(classOf[AdminServerActor], commandClient),
       "AdminServerActor")
     serverActor ! StartServer(config.ip, config.port)
-    system.awaitTermination
+    system
   }
 }
 
 object AdminRun {
-  def main (args: Array[String]) {
+  def main (args: Array[String]) : Unit = {
     AdminServer.createAdminServer(AdminServerConfig(
       ip = "localhost",
       port = 7071))
+    .awaitTermination
   }
 }

@@ -23,8 +23,7 @@ import org.apache.predictionio.authentication.KeyAuthentication
 import org.apache.predictionio.configuration.SSLConfiguration
 import org.apache.predictionio.data.storage.Storage
 import spray.can.server.ServerSettings
-import spray.routing.directives.AuthMagnet
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.ExecutionContext
 import akka.actor.{ActorContext, Actor, ActorSystem, Props}
 import akka.io.IO
 import akka.pattern.ask
@@ -35,7 +34,6 @@ import spray.can.Http
 import spray.http._
 import spray.http.MediaTypes._
 import spray.routing._
-import spray.routing.authentication.{Authentication, UserPass, BasicAuth}
 
 import scala.concurrent.duration._
 
@@ -55,12 +53,13 @@ object Dashboard extends Logging with SSLConfiguration {
     }
 
     parser.parse(args, DashboardConfig()) map { dc =>
-      createDashboard(dc)
+      createDashboard(dc).awaitTermination
     }
   }
 
-  def createDashboard(dc: DashboardConfig): Unit = {
-    implicit val system = ActorSystem("pio-dashboard")
+  def createDashboard(dc: DashboardConfig): ActorSystem = {
+    val systemName = "pio-dashboard"
+    implicit val system = ActorSystem(systemName)
     val service =
       system.actorOf(Props(classOf[DashboardActor], dc), "dashboard")
     implicit val timeout = Timeout(5.seconds)
@@ -72,7 +71,7 @@ object Dashboard extends Logging with SSLConfiguration {
       interface = dc.ip,
       port = dc.port,
       settings = Some(settings.copy(sslEncryption = sslEnforced)))
-    system.awaitTermination
+    system
   }
 }
 

@@ -24,9 +24,9 @@
 # you need to change these to fit your site.
 
 # SPARK_HOME: Apache Spark is a hard dependency and must be configured.
-SPARK_HOME=$SPARK_HOME
+# SPARK_HOME=$SPARK_HOME
 
-POSTGRES_JDBC_DRIVER=/drivers/postgresql-9.4-1204.jdbc41.jar
+POSTGRES_JDBC_DRIVER=/drivers/$PGSQL_JAR
 MYSQL_JDBC_DRIVER=
 
 # ES_CONF_DIR: You must configure this if you have advanced configuration for
@@ -39,7 +39,7 @@ MYSQL_JDBC_DRIVER=
 
 # HBASE_CONF_DIR: You must configure this if you intend to run PredictionIO
 #                 with HBase on a remote cluster.
-HBASE_CONF_DIR=$HBASE_HOME/conf
+HBASE_CONF_DIR=$PIO_HOME/conf
 
 # Filesystem paths where PredictionIO uses as block storage.
 PIO_FS_BASEDIR=$HOME/.pio_store
@@ -52,7 +52,7 @@ PIO_FS_TMPDIR=$PIO_FS_BASEDIR/tmp
 # storage facilities. Default values are shown below.
 #
 # For more information on storage configuration please refer to
-# https://docs.prediction.io/system/anotherdatastore/
+# https://predictionio.incubator.apache.org/system/anotherdatastore/
 
 # Storage Repositories
 
@@ -73,7 +73,7 @@ PIO_STORAGE_REPOSITORIES_MODELDATA_SOURCE=$PIO_STORAGE_REPOSITORIES_MODELDATA_SO
 # Please change PIO_STORAGE_SOURCES_PGSQL_USERNAME and
 # PIO_STORAGE_SOURCES_PGSQL_PASSWORD accordingly
 PIO_STORAGE_SOURCES_PGSQL_TYPE=jdbc
-PIO_STORAGE_SOURCES_PGSQL_URL=jdbc:postgresql://localhost/pio
+PIO_STORAGE_SOURCES_PGSQL_URL=jdbc:postgresql://postgres/pio
 PIO_STORAGE_SOURCES_PGSQL_USERNAME=pio
 PIO_STORAGE_SOURCES_PGSQL_PASSWORD=pio
 
@@ -86,9 +86,19 @@ PIO_STORAGE_SOURCES_PGSQL_PASSWORD=pio
 # Elasticsearch Example
 PIO_STORAGE_SOURCES_ELASTICSEARCH_TYPE=elasticsearch
 #PIO_STORAGE_SOURCES_ELASTICSEARCH_CLUSTERNAME=pio
-PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS=localhost
-PIO_STORAGE_SOURCES_ELASTICSEARCH_PORTS=9300
-PIO_STORAGE_SOURCES_ELASTICSEARCH_HOME=$ELASTICSEARCH_HOME
+PIO_STORAGE_SOURCES_ELASTICSEARCH_HOSTS=elasticsearch
+PIO_STORAGE_SOURCES_ELASTICSEARCH_SCHEMES=http
+if [ ! -z "$PIO_ELASTICSEARCH_VERSION" ]; then
+    ES_MAJOR=`echo $PIO_ELASTICSEARCH_VERSION | awk -F. '{print $1}'`
+else
+    ES_MAJOR=1
+fi
+if [ "$ES_MAJOR" = "1" ]; then
+    PIO_STORAGE_SOURCES_ELASTICSEARCH_PORTS=9300
+else
+    PIO_STORAGE_SOURCES_ELASTICSEARCH_PORTS=9200
+fi
+#PIO_STORAGE_SOURCES_ELASTICSEARCH_HOME=$ELASTICSEARCH_HOME
 
 # Local File System Example
 PIO_STORAGE_SOURCES_LOCALFS_TYPE=localfs
@@ -96,8 +106,17 @@ PIO_STORAGE_SOURCES_LOCALFS_PATH=$PIO_FS_BASEDIR/local_models
 
 # HBase Example
 PIO_STORAGE_SOURCES_HBASE_TYPE=hbase
-PIO_STORAGE_SOURCES_HBASE_HOME=$HBASE_HOME
+#PIO_STORAGE_SOURCES_HBASE_HOME=$HBASE_HOME
 
 # HDFS config
 PIO_STORAGE_SOURCES_HDFS_TYPE=hdfs
 PIO_STORAGE_SOURCES_HDFS_PATH=/hdfs_models
+
+# AWS S3 Example
+PIO_STORAGE_SOURCES_S3_TYPE=s3
+PIO_STORAGE_SOURCES_S3_ENDPOINT=http://localstack:4572
+PIO_STORAGE_SOURCES_S3_REGION=us-east-1
+PIO_STORAGE_SOURCES_S3_BUCKET_NAME=pio_bucket
+PIO_STORAGE_SOURCES_S3_BASE_PATH=pio_model
+PIO_STORAGE_SOURCES_S3_DISABLE_CHUNKED_ENCODING=true
+

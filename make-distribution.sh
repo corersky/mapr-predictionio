@@ -19,30 +19,82 @@
 
 set -e
 
+usage ()
+{
+    echo "Usage: $0 [-h|--help]"
+    echo ""
+    echo "  -h|--help    Show usage"
+    echo ""
+    echo "  --with-rpm   Build distribution for RPM package"
+    echo "  --with-deb   Build distribution for DEB package"
+}
+
+JAVA_PROPS=()
+
+for i in "$@"
+do
+case $i in
+    -h|--help)
+    usage
+    shift
+    exit
+    ;;
+    -D*)
+    JAVA_PROPS+=("$i")
+    shift
+    ;;
+    --with-rpm)
+    RPM_BUILD=true
+    shift
+    ;;
+    --with-deb)
+    DEB_BUILD=true
+    shift
+    ;;
+    *)
+    usage
+    exit 1
+    ;;
+esac
+done
+
 FWDIR="$(cd `dirname $0`; pwd)"
 DISTDIR="${FWDIR}/dist"
 
-VERSION=$(grep version ${FWDIR}/build.sbt | grep ThisBuild | grep -o '".*"' | sed 's/"//g')
+VERSION=$(grep ^version ${FWDIR}/build.sbt | grep ThisBuild | grep -o '".*"' | sed 's/"//g')
 
 echo "Building binary distribution for PredictionIO $VERSION..."
 
 cd ${FWDIR}
-sbt/sbt common/publishLocal core/publishLocal data/publishLocal e2/publishLocal tools/assembly
+set -x
+sbt/sbt "${JAVA_PROPS[@]}" clean
+sbt/sbt "${JAVA_PROPS[@]}" printBuildInfo
+sbt/sbt "${JAVA_PROPS[@]}" publishLocal assembly storage/publishLocal storage/assembly
+sbt/sbt "${JAVA_PROPS[@]}" assembly/clean assembly/universal:packageBin assembly/universal:packageZipTarball
+if [ x$RPM_BUILD = "xtrue" ] ; then
+    sbt/sbt "${JAVA_PROPS[@]}" assembly/rpm:packageBin
+fi
+if [ x$DEB_BUILD = "xtrue" ] ; then
+    sbt/sbt "${JAVA_PROPS[@]}" assembly/debian:packageBin
+fi
+set +x
 
 cd ${FWDIR}
 rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}/bin
 mkdir -p ${DISTDIR}/conf
 mkdir -p ${DISTDIR}/lib
+mkdir -p ${DISTDIR}/lib/spark
 mkdir -p ${DISTDIR}/project
+
 mkdir -p ${DISTDIR}/sbt
 
 cp ${FWDIR}/bin/* ${DISTDIR}/bin || :
 cp ${FWDIR}/conf/* ${DISTDIR}/conf
 cp ${FWDIR}/project/build.properties ${DISTDIR}/project
 cp ${FWDIR}/sbt/sbt ${DISTDIR}/sbt
-cp ${FWDIR}/sbt/sbt-launch-lib.bash ${DISTDIR}/sbt
-cp ${FWDIR}/assembly/*assembly*jar ${DISTDIR}/lib
+cp ${FWDIR}/assembly/src/universal/lib/*assembly*jar ${DISTDIR}/lib
+cp ${FWDIR}/assembly/src/universal/lib/spark/*jar ${DISTDIR}/lib/spark
 
 rm -f ${DISTDIR}/lib/*javadoc.jar
 rm -f ${DISTDIR}/lib/*sources.jar
@@ -54,6 +106,9 @@ touch ${DISTDIR}/RELEASE
 TARNAME="PredictionIO-$VERSION.tar.gz"
 TARDIR="PredictionIO-$VERSION"
 cp -r ${DISTDIR} ${TARDIR}
+
+cp LICENSE.txt ${TARDIR}
+cp NOTICE.txt ${TARDIR}
 
 tar zcvf ${TARNAME} ${TARDIR}
 rm -rf ${TARDIR}

@@ -16,8 +16,12 @@
 # limitations under the License.
 #
 
-set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [[ $BUILD_TYPE == Unit ]]; then
-  ./bin/travis/pio-stop-travis
-fi
+source $DIR/../conf/pio-vendors.sh
+
+# Print a summary of containers used
+docker ps -a
+
+# Clean up used containers
+docker-compose -f $DIR/docker-compose.yml down

@@ -15,64 +15,40 @@
 # limitations under the License.
 #
 
-from ubuntu
+FROM predictionio/pio
 
-ENV SPARK_VERSION 1.4.0
-ENV ELASTICSEARCH_VERSION 1.4.4
-ENV HBASE_VERSION 1.0.0
+ARG SPARK_ARCHIVE
+ARG SPARK_DIR
+ARG PGSQL_JAR
+ARG PIO_SCALA_VERSION
+ARG PIO_SPARK_VERSION
+ARG PIO_HADOOP_VERSION
+ARG PIO_ELASTICSEARCH_VERSION
 
-RUN echo "== Updating system =="
-RUN apt-get update -y
-RUN echo "== Downloading packages =="
-RUN apt-get install -y \
-    wget curl \
-    python-pip \
-    python3-pip \
-    postgresql postgresql-contrib \
-    openjdk-8-jdk \
-    openssh-client openssh-server
+ENV PIO_SCALA_VERSION=$PIO_SCALA_VERSION
+ENV PIO_SPARK_VERSION=$PIO_SPARK_VERSION
+ENV PIO_HADOOP_VERSION=$PIO_HADOOP_VERSION
+ENV PIO_ELASTICSEARCH_VERSION=$PIO_ELASTICSEARCH_VERSION
 
-RUN pip install predictionio
-RUN pip3 install --upgrade pip
-RUN pip3 install xmlrunner
-RUN pip3 install --upgrade requests
-RUN pip3 install --upgrade urllib3
+ENV PGSQL_JAR=$PGSQL_JAR
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/jre
+# WORKAROUND: es-hadoop stops on RDD#take(1)
+ADD docker-files/${SPARK_ARCHIVE} /vendors
+RUN echo "spark.locality.wait.node 0s" > /vendors/${SPARK_DIR}/conf/spark-defaults.conf
+ENV SPARK_HOME /vendors/${SPARK_DIR}
 
-RUN echo "== Installing Spark =="
-RUN mkdir vendors
-RUN wget http://d3kbcqa49mib13.cloudfront.net/spark-${SPARK_VERSION}-bin-hadoop2.6.tgz
-RUN tar zxvfC spark-${SPARK_VERSION}-bin-hadoop2.6.tgz /vendors
-RUN rm spark-${SPARK_VERSION}-bin-hadoop2.6.tgz
-ENV SPARK_HOME /vendors/spark-${SPARK_VERSION}-bin-hadoop2.6
-
-RUN echo "== Installing Elasticsearch =="
-RUN wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz
-RUN tar zxvfC elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz /vendors
-RUN rm elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz
-ENV ELASTICSEARCH_HOME /vendors/elasticsearch-${ELASTICSEARCH_VERSION}
-
-RUN echo "== Installing HBase =="
-RUN wget http://archive.apache.org/dist/hbase/hbase-${HBASE_VERSION}/hbase-${HBASE_VERSION}-bin.tar.gz
-RUN tar zxvfC hbase-${HBASE_VERSION}-bin.tar.gz /vendors
-RUN rm hbase-${HBASE_VERSION}-bin.tar.gz
-ENV HBASE_HOME /vendors/hbase-${HBASE_VERSION}
-
-RUN echo "== Downloading database drivers =="
-RUN mkdir drivers
-RUN wget https://jdbc.postgresql.org/download/postgresql-9.4-1204.jdbc41.jar -P /drivers
-
-RUN mkdir PredictionIO
-ENV PIO_HOME /PredictionIO
-ENV PATH ${PIO_HOME}/bin/:${PATH}
-ENV HOST_PIO_HOME /pio_host
-
-RUN echo "== Setting configs =="
+COPY docker-files/${PGSQL_JAR} /drivers/${PGSQL_JAR}
 COPY docker-files/init.sh init.sh
-COPY docker-files/env-conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh
-COPY docker-files/env-conf/hbase-site.xml ${HBASE_HOME}/conf/hbase-site.xml
-COPY docker-files/env-conf/pio-env.sh /pio-env.sh
+COPY docker-files/env-conf/hbase-site.xml ${PIO_HOME}/conf/hbase-site.xml
+COPY docker-files/env-conf/pio-env.sh ${PIO_HOME}/conf/pio-env.sh
+COPY docker-files/pgpass /root/.pgpass
+COPY docker-files/awscredentials /root/.aws/credentials
+RUN chmod 600 /root/.pgpass
+
+# Python
+RUN pip install python-dateutil
+RUN pip install pytz
+RUN pip install awscli
 
 # Default repositories setup
 ENV PIO_STORAGE_REPOSITORIES_METADATA_SOURCE PGSQL
@@ -87,20 +63,8 @@ ENV JVM_OPTS '-Dfile.encoding=UTF8 -Xms2048M -Xmx2048M -Xss8M -XX:MaxPermSize=51
 EXPOSE 8000
 # eventserver
 EXPOSE 7070
-# spark master UI
-EXPOSE 8080
-# spark worker UI
-EXPOSE 8081
-# spark context UI
-EXPOSE 4040
-# HMaster
-EXPOSE 60000
-# HMaster Info Web UI
-EXPOSE 60010
-# Region Server
-Expose 60020
-# Region Server Http
-EXPOSE 60030
+
+ENV SLEEP_TIME 30
 
 ENTRYPOINT ["/init.sh"]
 CMD 'bash'

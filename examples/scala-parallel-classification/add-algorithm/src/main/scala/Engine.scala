@@ -15,20 +15,26 @@
  * limitations under the License.
  */
 
-package org.template.classification
+package org.apache.predictionio.examples.classification
 
-import org.apache.predictionio.controller.IEngineFactory
+import org.apache.predictionio.controller.EngineFactory
 import org.apache.predictionio.controller.Engine
 
-class Query(
-  val features: Array[Double]
-) extends Serializable
+case class Query(
+  attr0 : Double,
+  attr1 : Double,
+  attr2 : Double
+)
 
-class PredictedResult(
-  val label: Double
-) extends Serializable
+case class PredictedResult(
+  label: Double
+)
 
-object ClassificationEngine extends IEngineFactory {
+case class ActualResult(
+  label: Double
+)
+
+object ClassificationEngine extends EngineFactory {
   def apply() = {
     new Engine(
       classOf[DataSource],

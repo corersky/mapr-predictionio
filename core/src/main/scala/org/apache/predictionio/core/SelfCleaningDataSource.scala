@@ -24,6 +24,7 @@ import org.apache.predictionio.data.store.{Common, LEventStore, PEventStore}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.joda.time.DateTime
+import org.json4s._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
@@ -74,13 +75,12 @@ trait SelfCleaningDataSource {
     */
   @DeveloperApi
   def getCleanedPEvents(pEvents: RDD[Event]): RDD[Event] = {
-
     eventWindow
       .flatMap(_.duration)
       .map { duration =>
         val fd = Duration(duration)
         pEvents.filter(e =>
-          e.eventTime.isAfter(DateTime.now().minus(fd.toMillis))
+          e.eventTime.isAfter(DateTime.now().minus(fd.toMillis)) || isSetEvent(e)
         )
       }.getOrElse(pEvents)
   }
@@ -99,7 +99,7 @@ trait SelfCleaningDataSource {
       .map { duration =>
         val fd = Duration(duration)
         lEvents.filter(e =>
-          e.eventTime.isAfter(DateTime.now().minus(fd.toMillis))
+          e.eventTime.isAfter(DateTime.now().minus(fd.toMillis)) || isSetEvent(e)
         )
       }.getOrElse(lEvents).toIterable
   }
@@ -127,7 +127,7 @@ trait SelfCleaningDataSource {
 
   def removePDuplicates(sc: SparkContext, rdd: RDD[Event]): RDD[Event] = {
     val now = DateTime.now()
-    rdd.map(x =>
+    rdd.sortBy(_.eventTime, true).map(x =>
       (recreateEvent(x, None, now), (x.eventId, x.eventTime)))
       .groupByKey
       .map{case (x, y) => recreateEvent(x, y.head._1, y.head._2)}
@@ -144,7 +144,7 @@ trait SelfCleaningDataSource {
 
   def removeLDuplicates(ls: Iterable[Event]): Iterable[Event] = {
     val now = DateTime.now()
-    ls.toList.map(x =>
+    ls.toList.reverse.map(x =>
       (recreateEvent(x, None, now), (x.eventId, x.eventTime)))
       .groupBy(_._1).mapValues( _.map( _._2 ) )
       .map(x => recreateEvent(x._1, x._2.head._1, x._2.head._2))
@@ -229,7 +229,7 @@ trait SelfCleaningDataSource {
     */
   @DeveloperApi
   def cleanPEvents(sc: SparkContext): RDD[Event] = {
-    val pEvents = PEventStore.find(appName)(sc).sortBy(_.eventTime)
+    val pEvents = getCleanedPEvents(PEventStore.find(appName)(sc).sortBy(_.eventTime, false))
 
     val rdd = eventWindow match {
       case Some(ew) =>
@@ -241,7 +241,7 @@ trait SelfCleaningDataSource {
       case None =>
         pEvents
     }
-    getCleanedPEvents(rdd)
+    rdd
   }
 
   /** :: DeveloperApi ::
@@ -274,7 +274,7 @@ trait SelfCleaningDataSource {
     */
   @DeveloperApi
   def cleanLEvents(): Iterable[Event] = {
-    val lEvents = LEventStore.find(appName).toList.sortBy(_.eventTime)
+    val lEvents = getCleanedLEvents(LEventStore.find(appName).toList.sortBy(_.eventTime).reverse)
 
     val events = eventWindow match {
       case Some(ew) =>
@@ -285,7 +285,7 @@ trait SelfCleaningDataSource {
       case None =>
         lEvents
     }
-    getCleanedLEvents(events)
+    events
   }
 
 
@@ -305,13 +305,14 @@ trait SelfCleaningDataSource {
               e1.properties.fields
                 .filterKeys(f => !e2.properties.fields.contains(f))
           }
-          e1.copy(properties = DataMap(props))
+          e1.copy(properties = DataMap(props), eventTime = e2.eventTime)
         }
 
       case None =>
         events.reduce { (e1, e2) =>
           e1.copy(properties =
-            DataMap(e1.properties.fields ++ e2.properties.fields)
+            DataMap(e1.properties.fields ++ e2.properties.fields),
+            eventTime = e2.eventTime
           )
         }
     }
